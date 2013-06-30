@@ -1,0 +1,13 @@
+INPUT(
+./release\main.o
+./release\phonewindow.o
+./release\connection.o
+./release\userinfo.o
+./release\action.o
+./release\authorization.o
+./release\inoutcall.o
+./release\moc_phonewindow.o
+./release\moc_connection.o
+./release\moc_authorization.o
+./release\moc_inoutcall.o
+);

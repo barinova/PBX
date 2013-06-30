@@ -1,0 +1,35 @@
+#-------------------------------------------------
+#
+# Project created by QtCreator 2013-05-12T15:39:42
+#
+#-------------------------------------------------
+
+QT       += core gui network
+3CONFIG += ordered release
+TARGET = PBX
+TEMPLATE = app
+
+
+SOURCES += main.cpp\
+        phonewindow.cpp \
+    connection.cpp \
+    incommingcall.cpp \
+    speakwindow.cpp \
+    userinfo.cpp \
+    action.cpp \
+    getmessagefromserv.cpp \
+    setmessageforserv.cpp
+
+HEADERS  += phonewindow.h \
+    connection.h \
+    incommingcall.h \
+    speakwindow.h \
+    userinfo.h \
+    action.h \
+    getmessage.h \
+    setmessageforserv.h
+
+FORMS    += phonewindow.ui \
+    connection.ui \
+    incommingcall.ui \
+    speakwindow.ui

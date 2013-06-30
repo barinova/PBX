@@ -1,0 +1,13 @@
+INPUT(
+./debug\main.o
+./debug\phonewindow.o
+./debug\connection.o
+./debug\userinfo.o
+./debug\action.o
+./debug\authorization.o
+./debug\inoutcall.o
+./debug\moc_phonewindow.o
+./debug\moc_connection.o
+./debug\moc_authorization.o
+./debug\moc_inoutcall.o
+);
