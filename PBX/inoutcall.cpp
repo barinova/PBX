@@ -44,7 +44,6 @@ void InOutCall::on_buttonCall_clicked()
     temp = ui->labelInOutNum->text();
     if(!temp.isEmpty())
     {
-        //str = "ACT BUSY CO " + temp + " NULL";
         str = "ACT\n" + QString::number(myExtention) + "\nCO\n" + temp + "\nNULL";
         emit sendToServ(str);
     }
@@ -56,9 +55,9 @@ void InOutCall::on_buttonTransfer_clicked()
 {
     ui->tabWidget->insertTab(1,ui->tabWidget->widget(1), "Transfer");
     ui->tabWidget->widget(1)->setEnabled(true);
-    ui->tableView->setModel(getTable());
+    getTable();
     ui->tabWidget->setCurrentIndex(1);
-    }
+}
 
 void InOutCall::on_buttonDesline_clicked()
 {
@@ -75,7 +74,6 @@ void InOutCall::on_buttonDesline_clicked()
 
 void InOutCall::on_buttonAnswer_clicked()
 {
-
     QString str, temp;
     temp = ui->labelInOutNum->text();
     if(!temp.isEmpty())
@@ -87,47 +85,45 @@ void InOutCall::on_buttonAnswer_clicked()
     this->close();
 }
 
-QStandardItemModel* InOutCall::getTable()
+void InOutCall::getTable()
 {
-    QStandardItemModel *mytablemodel = new QStandardItemModel();
-    mytablemodel->setRowCount(0);
-
-    int Max_num_of_Columns(3);
-    int Max_Number_of_Lines(0);
-    mytablemodel->setColumnCount(Max_num_of_Columns);
-
-    QFile file("C:/Users/A/QT/PBX/contacts.txt");
-    if (!file.open(QIODevice::ReadWrite | QIODevice::Text))
-      qDebug() << "Error opening file";
-    mytablemodel->setHeaderData(0, Qt::Horizontal, "Number");
-    mytablemodel->setHeaderData(1, Qt::Horizontal, "Name");
-    mytablemodel->setHeaderData(2, Qt::Horizontal, "Group");
-    QTextStream InputDataFile(&file);
-    while (!InputDataFile.atEnd())
-    {
-        QString line = InputDataFile.readLine();
-        QStringList fields = line.split(" ");
-
-        if (fields.size() == Max_num_of_Columns)
-        {
-            for (int column=0; column< Max_num_of_Columns; column++)
-            {
-                QStandardItem *item = new QStandardItem(fields[column]);
-                mytablemodel->setItem(Max_Number_of_Lines, column, item);
-            }
-            Max_Number_of_Lines++ ;
-        }
-    }
-    file.close();
-    return mytablemodel;
+    QMessageBox *mb = new QMessageBox();
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+    db.setDatabaseName(dataBaseName);
+    if(!db.open()){
+          qDebug()<<db.lastError().text();
+          return;
+       }
+    if(!db.isOpen())
+       {
+           mb->setText("Fail");
+           mb->show();
+       }
+    QSqlTableModel *model = new QSqlTableModel(this,db);
+    model->setTable("Contacts");
+    model->setEditStrategy(QSqlTableModel::OnManualSubmit);
+    model->select();
+    model->setHeaderData(0,Qt::Horizontal,"number");
+    model->setHeaderData(1,Qt::Horizontal,"name");
+    model->setHeaderData(0,Qt::Horizontal,"groups");
+    model->setHeaderData(0,Qt::Horizontal,"status");
+    ui->tableView->setModel(model);
 }
 
 
 void InOutCall::on_buttonSelectNum_clicked()
 {
-    QString tmp = "ACT\n" + QString::number(sender) + "\nCT\n" + QString::number(myExtention) + "\n" + ui->tableView->model()->data(ui->tableView->model()->index(ui->tableView->selectionModel()->currentIndex().row(),0)).toString() + "\n1";
-    emit sendToServ(tmp);
-    emit sendToServ("ONLINE");
+    if(ui->tableView->model()->data(ui->tableView->model()->index(ui->tableView->selectionModel()->currentIndex().row(),3)).toString() == "ONLINE")
+    {
+        QString tmp = "ACT\n" + QString::number(sender) + "\nCT\n" + QString::number(myExtention) + "\n" + ui->tableView->model()->data(ui->tableView->model()->index(ui->tableView->selectionModel()->currentIndex().row(),0)).toString() + "\n1";
+        emit sendToServ(tmp);
+        emit sendToServ("ONLINE");
+        this->close();
+    }
+    else
+    {
+        QMessageBox::information(this, "Error", "This user is not online");
+    }
 }
 
 

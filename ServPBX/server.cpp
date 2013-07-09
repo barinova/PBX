@@ -13,9 +13,11 @@ Server::Server(QWidget *parent) :
     getTable();
     connect(server, SIGNAL(newConnection()), this, SLOT(NewClient()));
     bytes = 0;
-    callID.push_back(0);
     ui->buttonInsert->setDisabled(true);
     ui->buttonCancel->setDisabled(true);
+    CallID call;
+    call.id = 0;
+    callID.push_back(call);
 }
 
 Server::~Server()
@@ -36,7 +38,6 @@ void Server::NewClient() {
   }
 
 void Server::GetMessage() {
-
     QString str;
     QTcpSocket *senderSocket = qobject_cast<QTcpSocket *>(sender());
     client = senderSocket;
@@ -48,10 +49,13 @@ void Server::GetMessage() {
         {
             if(listConnect[i].tcpSock == senderSocket)
             {
-                listConnect.removeAt(i);
+              listConnect.removeAt(i);
+              client->write("OFFLINE");
+              updateTable();
             }
         }
-        client->write("OFFLINE");
+    //qDebug() << ;
+
         //client->disconnect();
     }
     else
@@ -85,11 +89,30 @@ void Server::GetMessage() {
 
         //if new client(his number = 0) - add extention to listConnect
         if(listConnect.back().extension == 0)
-            listConnect.back().extension = data.toInt();
+        {
+            bool constraints = false;
+            int n = data.toInt();
+            for(int i(0); i < listConnect.count() - 1; i++)
+            {
+                if(listConnect[i].extension == n)
+                {
+                    constraints = true;
+                }
+            }
+            if(constraints == false)
+                listConnect.back().extension = n;
+            else
+            {
+                client->write("OFFLINE");
+                listConnect.pop_back();
+            }
+        }
         GetMessageFrom *getMsg = new GetMessageFrom();
         //send a recieveMessage depends on the type of message
+        connect(getMsg, SIGNAL(forCallID(int, int, int, actionType)), this, SLOT(setCallID(int, int, int, actionType)));
+
         str = getMsg->TypeMessage(QString(data).toStdString());
-        //search socket receiver
+//search socket receiver
         if(!str.isEmpty())
         {
             QStringList list = str.split("\n");//split problem
@@ -102,6 +125,7 @@ void Server::GetMessage() {
                     client = listConnect[i].tcpSock;
                     data.append(str);
                     client->write(data);
+                    updateTable();
                 }
             }
         }
@@ -115,13 +139,6 @@ void Server::on_buttonSend_clicked()
     data.append(str);
     client->write(data);
     data.clear();
-}
-
-int Server::getCallID()
-{
-    int ID;
-    ID = callID.back()++;
-    return ID;
 }
 
 
@@ -140,7 +157,7 @@ void Server::getTable()
            mb->show();
        }
     updateTable();
-
+    connect(ui->tableView, SIGNAL(clicked(QModelIndex)),this,SLOT(on_tableView_clicked(QModelIndex)));
 }
 
 bool Server::insertVal(int num, QString name, QString groups, QString status)
@@ -197,9 +214,8 @@ bool Server::selectVal()
     return ret;
 }
 
-bool Server::updateTable()
+void Server::updateTable()
 {
-    bool ret;
     model = new QSqlTableModel(this,db);
     model->setTable("Contacts");
     model->setEditStrategy(QSqlTableModel::OnManualSubmit);
@@ -209,7 +225,6 @@ bool Server::updateTable()
     model->setHeaderData(0,Qt::Horizontal,"groups");
     model->setHeaderData(0,Qt::Horizontal,"status");
     ui->tableView->setModel(model);
-    return ret;
 }
 void Server::on_buttonAdd_clicked()
 {
@@ -283,12 +298,69 @@ void Server::on_buttonUpdate_clicked()
             std::string str = ui->tableView->model()->index(row, 3).data().toString().toStdString();
             if(strcmp(str.c_str(), "OFFLINE") == 0)
             {
-                    data.clear();
-                    data.append("OFFLINE");
-                    client->write(data);
+                for(int i(0); i < listConnect.count(); i++)
+                    if(client == listConnect[i].tcpSock)
+                    {
+                        data.clear();
+                        data.append("OFFLINE");
+                        client->write(data);
+                    }
             }
             updateTable();
         }
     }
+}
 
+void Server::setCallID(int first, int second, int third, actionType type)
+{
+    if(type == CC)
+    {
+        //CC
+        for(int i(0); i < callID.count(); i++)
+        {
+            if(callID[i].secondParty == first && callID[i].firstParty == second)
+                callID.removeAt(i);
+        }
+    }
+    else
+    {
+        if(type == CO)
+        {
+            CallID call;
+            call.id = callID.back().id + 1;
+            call.firstParty = first;
+            call.secondParty = second;
+            call.thirdParty = third;
+            callID.push_back(call);
+        }
+        else
+        {
+            //CT
+            for(int i(0); i < callID.count(); i++)
+            {
+                if(callID[i].secondParty == first && callID[i].firstParty == second)
+                {
+                    callID[i].secondParty = third;
+                    callID[i].firstParty = first;
+                }
+            }
+        }
+    }
+}
+
+void Server::on_tableView_clicked(const QModelIndex &index)
+{
+    ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+}
+
+void Server::closeEvent(QCloseEvent *event)
+{
+    QSqlQuery query;
+    bool ret = false;
+    ret = query.exec(QString("UPDATE Contacts SET status = 'OFFLINE'"));
+    if (!ret)
+    {
+        QMessageBox::information(this, "FAIL", query.lastError().text());
+    }
+    close();
 }

@@ -11,6 +11,8 @@
 #include <QTextStream>
 #include <QDebug>
 #include <QTableView>
+#define dataBaseName "C:/Users/A/Desktop/Examples/Contacts"
+
 namespace Ui {
 class InOutCall;
 }
@@ -42,7 +44,7 @@ private slots:
 private:
     Ui::InOutCall *ui;
     int num;
-    QStandardItemModel *getTable();
+    void getTable();
 };
 
 #endif // INOUTCALL_H

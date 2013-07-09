@@ -20,6 +20,14 @@ struct lstCon
     QTcpSocket * tcpSock;
 };
 
+struct CallID
+{
+    int id;
+    int firstParty;
+    int secondParty;
+    int thirdParty;
+};
+
 namespace Ui {
 class Server;
 }
@@ -27,29 +35,26 @@ class Server;
 class Server : public QWidget
 {
     Q_OBJECT
-    
 public:
     explicit Server(QWidget *parent = 0);
     ~Server();
     int getCallID();
-    QList<int> callID;
     QList<lstCon> listConnect;
-   // QSqlDatabase db ;
-   // QSqlTableModel *model;
+    QList<CallID> callID;
+
 public slots:
-    void
-    NewClient();
-    void
-    GetMessage();
+    void NewClient();
+    void GetMessage();
+    void setCallID(int first, int second, int third, actionType type);
+
 private slots:
     void on_buttonSend_clicked();
     void on_buttonAdd_clicked();
     void on_buttonCancel_clicked();
     void on_buttonInsert_clicked();
-
     void on_buttonDelete_clicked();
-
     void on_buttonUpdate_clicked();
+    void on_tableView_clicked(const QModelIndex &index);
 
 private:
     Ui::Server *ui;
@@ -66,7 +71,8 @@ private:
     bool insertVal(int num, QString name, QString groups, QString status);
     bool deleteVal(int id);
     bool selectVal();
-    bool updateTable();
+    void updateTable();
+    void closeEvent(QCloseEvent *);
 };
 
 #endif // SERVER_H

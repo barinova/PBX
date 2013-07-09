@@ -10,6 +10,19 @@ PhoneWindow::PhoneWindow(QWidget *parent) :
     ui->buttonRetreive->setDisabled(true);
     ui->tabWidget->setCurrentIndex(0);
     getTable();
+    QListView * listView = new QListView(ui->comboBox);
+    ui->comboBox->addItem("ENGENEER");
+    ui->comboBox->addItem("TESTER");
+    ui->comboBox->addItem("HR");
+    listView->setStyleSheet("QListView::item {                              \
+                                 border-bottom: 5px solid white; margin:3px; }  \
+                                 QListView::item:selected {                     \
+                                 border-bottom: 5px solid black; margin:3px;    \
+                                 color: black;                                  \
+                                }                                               \
+                                ");
+    ui->comboBox->setView(listView);
+
 }
 
 PhoneWindow::~PhoneWindow()
@@ -27,6 +40,7 @@ void PhoneWindow::setNumber(QString str)
     str.prepend("number - ");
     this->setWindowTitle(str);
     updateDataUser(ONLINE, user.type);
+    updateDataUser();
     //connection with server
     con = new Connection();
     con->setNumber(user.extension);
@@ -37,7 +51,7 @@ void PhoneWindow::setNumber(QString str)
 void PhoneWindow::getTable()
 {
     QMessageBox *mb = new QMessageBox();
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+    db = QSqlDatabase::addDatabase("QSQLITE");
     db.setDatabaseName(dataBaseName);
     if(!db.open()){
           qDebug()<<db.lastError().text();
@@ -48,9 +62,7 @@ void PhoneWindow::getTable()
            mb->setText("Fail");
            mb->show();
        }
-    QSqlQuery query;
-       //QStandardItemModel *model = new QStandardItemModel();
-    QSqlTableModel *model = new QSqlTableModel(this,db);
+    model = new QSqlTableModel(this,db);
     model->setTable("Contacts");
     model->setEditStrategy(QSqlTableModel::OnManualSubmit);
     model->select();
@@ -74,15 +86,31 @@ void PhoneWindow::updateDataUser(statistic status, typeCall group)
         case CONFERENCE:  {strUser = "CONFERENCE"; break;}
     }
     ui->labelStatus->setText(strUser);
+}
 
-   /* user.type = group;
-    switch(group)
+void PhoneWindow::updateDataUser()
+{
+    QString strGroup;
+    QSqlQuery query;
+    bool ret = false;
+    ret = query.exec("SELECT * FROM Contacts");
+    //ret = query.exec(QString("SELECT groups FROM Contacts WHERE number = %1").arg(user.extension));
+    if (!ret)
     {
-        case ENGINEER:  {strGroup = "ENGINEER"; break;}
-        case TESTER:  {strGroup = "TESTER"; break;}
-        case HR:  {strGroup = "HR"; break;}
+        QMessageBox::information(this, "FAIL", query.lastError().text());
     }
-    ui->labelGroup->setText(strGroup);*/
+    QSqlRecord rec = query.record();
+    query.next();
+        //qDebug() << query.value(rec.indexOf("number")).toInt() << query.value(rec.indexOf("status")).toString();
+
+    typeCall stat = user.switchCall(query.value(rec.indexOf("groups")).toString().toStdString(), user.mapType);
+    switch(stat)
+       {
+           case ENGINEER:  {strGroup = "ENGINEER"; break;}
+           case TESTER:  {strGroup = "TESTER"; break;}
+           case HR:  {strGroup = "HR"; break;}
+       }
+    ui->labelGroup->setText(strGroup);
 }
 
 void PhoneWindow::sendMsg(QString str)
@@ -102,14 +130,17 @@ void PhoneWindow::on_testButton_clicked()
 
 void PhoneWindow::on_buttonCall_clicked()
 {
-   ui->buttonConference->setEnabled(false);
-   InOutCall *inout = new InOutCall();
-   connect(inout, SIGNAL(sendToServ(QString)), this, SLOT(recieveFromInOut(QString)));
-   inout->setLable("outgoing", ui->tableView->model()->data(ui->tableView->model()->index(ui->tableView->selectionModel()->currentIndex().row(),0)).toString());
-   inout->show();
-   inout->myExtention = user.extension;
-   connect(inout, SIGNAL(sendData(QString)), this , SLOT(recieveData(QString)));
-   updateDataUser(BUSY, user.type);
+   if(ui->tableView->model()->data(ui->tableView->model()->index(ui->tableView->selectionModel()->currentIndex().row(),0)) != user.extension)
+   {
+       ui->buttonConference->setEnabled(false);
+       InOutCall *inout = new InOutCall();
+       connect(inout, SIGNAL(sendToServ(QString)), this, SLOT(recieveFromInOut(QString)));
+       inout->setLable("outgoing", ui->tableView->model()->data(ui->tableView->model()->index(ui->tableView->selectionModel()->currentIndex().row(),0)).toString());
+       inout->show();
+       inout->myExtention = user.extension;
+       connect(inout, SIGNAL(sendData(QString)), this , SLOT(recieveData(QString)));
+       updateDataUser(BUSY, user.type);
+   }
 }
 
 
@@ -131,14 +162,18 @@ void PhoneWindow::on_buttonExit_clicked()
 
 void PhoneWindow::on_buttonHangUp_clicked()
 {
-    QString str;
-    if(!ui->listWidget->item(0)->text().isEmpty())
+    if(!ui->listWidget->selectedItems().isEmpty())
     {
-        str = "ACT\n" + QString::number(user.extension) + "\nCC\n" + ui->listWidget->item(0)->text() + "\nNULL";
-        sendMsg(str);
+        QString str;
+        if(!ui->listWidget->item(0)->text().isEmpty())
+        {
+            str = "ACT\n" + QString::number(user.extension) + "\nCC\n" + ui->listWidget->item(0)->text() + "\nNULL";
+            sendMsg(str);
+        }
+        updateDataUser(ONLINE, user.type);
+        ui->listWidget->clear();
+        ui->buttonCall->setEnabled(true);
     }
-    updateDataUser(ONLINE, user.type);
-    ui->listWidget->clear();
 }
 
 
@@ -227,4 +262,30 @@ void PhoneWindow::fromInOut(QString str)
                 //action action wait
                 ui->buttonCall->setDisabled(true);
             }
+}
+
+void PhoneWindow::on_buttonUpdateContacts_clicked()
+{
+    model = new QSqlTableModel(this,db);
+    model->setTable("Contacts");
+    model->setEditStrategy(QSqlTableModel::OnManualSubmit);
+    model->select();
+    model->setHeaderData(0,Qt::Horizontal,"number");
+    model->setHeaderData(1,Qt::Horizontal,"name");
+    model->setHeaderData(0,Qt::Horizontal,"groups");
+    model->setHeaderData(0,Qt::Horizontal,"status");
+    ui->tableView->setModel(model);
+}
+
+void PhoneWindow::closeEvent(QCloseEvent *event)
+{
+    QSqlQuery query;
+    bool ret = false;
+    //depends of db
+    ret = query.exec(QString("UPDATE Contacts SET status = 'OFFLINE' WHERE number = %1").arg(user.extension));
+    if (!ret)
+    {
+        QMessageBox::information(this, "FAIL", query.lastError().text());
+    }
+    close();
 }

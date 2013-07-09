@@ -12,9 +12,9 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         server.cpp \
-    getmessage.cpp \
     userinfo.cpp \
-    action.cpp
+    action.cpp \
+    getmessagefrom.cpp
 
 HEADERS  += server.h \
     userinfo.h \

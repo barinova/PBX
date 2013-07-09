@@ -38,14 +38,19 @@ private slots:
     void on_buttonHangUp_clicked();
     void on_buttonHold_clicked();
     void on_buttonReceive_clicked();
+    void on_buttonUpdateContacts_clicked();
 
 private:
     Connection *con;
     Ui::PhoneWindow *ui;
     void getTable();
     void updateDataUser(statistic status, typeCall group);
+    void updateDataUser();
     QString switchUserData(statistic stat);
     void sendMsg(QString str);
+    QSqlTableModel *model;
+    QSqlDatabase db;
+    void closeEvent(QCloseEvent * event);
 };
 
 #endif // PHONEWINDOW_H

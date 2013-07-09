@@ -65,13 +65,6 @@ typeCall UserInfo::switchCall(std::string str, std::map<std::string, typeCall> m
     {
        call = mapType[str];
     }
-    /*switch(mapType[i])
-        {
-        case ENGINEER: {call = ENGINEER; break;};
-        case TESTER: {call = TESTER; break;};
-        case HR: {call = HR; break;};
-    default: {stat = NULL; break;};// RETURN ERROR
-        }*/
     return call;
 }
 
