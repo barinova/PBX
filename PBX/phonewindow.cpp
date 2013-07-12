@@ -11,7 +11,7 @@ PhoneWindow::PhoneWindow(QWidget *parent) :
     ui->tabWidget->setCurrentIndex(0);
     getTable();
     QListView * listView = new QListView(ui->comboBox);
-    ui->comboBox->addItem("ENGENEER");
+    ui->comboBox->addItem("ENGINEER");
     ui->comboBox->addItem("TESTER");
     ui->comboBox->addItem("HR");
     listView->setStyleSheet("QListView::item {                              \
@@ -93,7 +93,7 @@ void PhoneWindow::updateDataUser()
     QString strGroup;
     QSqlQuery query;
     bool ret = false;
-    ret = query.exec("SELECT * FROM Contacts");
+    ret = query.exec(QString("SELECT * FROM Contacts WHERE number = %1").arg(user.extension));
     //ret = query.exec(QString("SELECT groups FROM Contacts WHERE number = %1").arg(user.extension));
     if (!ret)
     {
@@ -279,6 +279,7 @@ void PhoneWindow::on_buttonUpdateContacts_clicked()
 
 void PhoneWindow::closeEvent(QCloseEvent *event)
 {
+    on_buttonExit_clicked();
     QSqlQuery query;
     bool ret = false;
     //depends of db
@@ -287,5 +288,43 @@ void PhoneWindow::closeEvent(QCloseEvent *event)
     {
         QMessageBox::information(this, "FAIL", query.lastError().text());
     }
+    query.clear();
     close();
+}
+
+void PhoneWindow::on_buttonToGroup_clicked()
+{
+    QString group = ui->comboBox->currentText();
+    QSqlQuery query;
+    QSqlRecord rec;
+    bool ret = false;
+    //ret = query.exec(QString("SELECT number FROM Contacts WHERE status = 'ONLINE' AND groups = 'ENGINEER'"));
+    //QSqlRecord rec = query.record();
+    //while(query.next())
+    //{
+    //    qDebug()<<query.value(rec.indexOf("number")).toInt();
+    //}
+    ret = query.exec(QString("SELECT number FROM Contacts WHERE status = 'ONLINE' AND groups = '%1' AND number <> %2").arg(group).arg(user.extension));
+    if (!ret)
+    {
+        QMessageBox::information(this, "FAIL", query.lastError().text());
+    }
+    rec = query.record();
+    qDebug() << query.value(rec.indexOf("number")).toString();
+    query.next();
+    qDebug() << query.value(rec.indexOf("number")).toString();
+    qDebug() << rec.indexOf("number");
+    //if(rec.indexOf("number") == user.extension);
+    //    query.next();
+    if(query.value(rec.indexOf("number")).toInt() != 0)
+    {
+        ui->buttonConference->setEnabled(false);
+        InOutCall *inout = new InOutCall();
+        connect(inout, SIGNAL(sendToServ(QString)), this, SLOT(recieveFromInOut(QString)));
+        inout->setLable("outgoing", query.value(rec.indexOf("number")).toString());
+        inout->show();
+        inout->myExtention = user.extension;
+        connect(inout, SIGNAL(sendData(QString)), this , SLOT(recieveData(QString)));
+        updateDataUser(BUSY, user.type);
+    }
 }

@@ -49,6 +49,7 @@ void Server::GetMessage() {
         {
             if(listConnect[i].tcpSock == senderSocket)
             {
+              senderSocket->close();
               listConnect.removeAt(i);
               client->write("OFFLINE");
               updateTable();

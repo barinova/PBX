@@ -40,6 +40,8 @@ private slots:
     void on_buttonReceive_clicked();
     void on_buttonUpdateContacts_clicked();
 
+    void on_buttonToGroup_clicked();
+
 private:
     Connection *con;
     Ui::PhoneWindow *ui;

@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'phonewindow.ui'
 **
-** Created: Wed 10. Jul 03:41:22 2013
+** Created: Wed 10. Jul 21:27:16 2013
 **      by: Qt User Interface Compiler version 4.8.1
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
@@ -164,10 +164,10 @@ public:
         lineEdit->setGeometry(QRect(220, 30, 113, 20));
         listWidget = new QListWidget(tabInfoAboutCall);
         listWidget->setObjectName(QString::fromUtf8("listWidget"));
-        listWidget->setGeometry(QRect(10, 30, 201, 301));
+        listWidget->setGeometry(QRect(10, 30, 201, 381));
         frameActiveCalls = new QFrame(tabInfoAboutCall);
         frameActiveCalls->setObjectName(QString::fromUtf8("frameActiveCalls"));
-        frameActiveCalls->setGeometry(QRect(-1, 0, 441, 351));
+        frameActiveCalls->setGeometry(QRect(-1, 0, 441, 441));
         frameActiveCalls->setStyleSheet(QString::fromUtf8("\n"
 "#frameActiveCalls {\n"
 "border: none;\n"
@@ -308,7 +308,7 @@ public:
 
         retranslateUi(PhoneWindow);
 
-        tabWidget->setCurrentIndex(0);
+        tabWidget->setCurrentIndex(1);
 
 
         QMetaObject::connectSlotsByName(PhoneWindow);
